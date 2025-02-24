@@ -3,10 +3,7 @@
 name: Terraform CI/CD
 
 on:
-  push:
-    branches:
-      - main  # Or your desired deployment branch
-  workflow_dispatch:  # Allows manual triggering
+  workflow_dispatch:  # Allows manual trigger only
 
 permissions:
   id-token: write
@@ -16,7 +13,7 @@ jobs:
   terraform:
     name: Terraform
     runs-on: ubuntu-latest
-    environment: production  # Or the environment you want to deploy to (e.g., staging)
+    environment: production  # Or your target environment
 
     steps:
       - name: Checkout
@@ -39,9 +36,8 @@ jobs:
 
       - name: Terraform Plan
         run: terraform plan
-        continue-on-error: true # If you want to continue even if the plan fails (for logging purposes)
+        continue-on-error: true  # Continues execution even if the plan fails
 
-      # Uncomment below if you want manual apply execution
       #- name: Terraform Apply
         #run: terraform apply -auto-approve
 
