@@ -38,9 +38,5 @@ jobs:
         run: terraform plan
         continue-on-error: true  # Continues execution even if the plan fails
 
-      #- name: Terraform Apply
-        #run: terraform apply -auto-approve
-
-      - name: Terraform Destroy
-        run: terraform destroy -auto-approve
-
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
