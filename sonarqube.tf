@@ -5,7 +5,7 @@ resource "aws_instance" "sonarqube_vm" {
   user_data              = filebase64("user-data-sonar.sh")
   vpc_security_group_ids = [aws_security_group.sonarQube-SG.id]
   key_name               = "webapp_keypair"
-
+}
   tags = {
     Name = "SonarQube VM"
   }
