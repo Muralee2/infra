@@ -9,7 +9,7 @@ resource "aws_instance" "sonarqube_vm" {
   tags = {
     Name = "SonarQube VM"
   }
-}
+
 
 resource "aws_security_group" "sonarQube-SG" {
   name        = "sonarQube-SG"
@@ -47,4 +47,4 @@ resource "null_resource" "wait_for_sonarqube" {
 
   depends_on = [aws_instance.sonarqube_vm]
 }
-}
+
