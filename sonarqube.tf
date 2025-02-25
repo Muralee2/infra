@@ -5,11 +5,11 @@ resource "aws_instance" "sonarqube_vm" {
   user_data              = filebase64("user-data-sonar.sh")
   vpc_security_group_ids = [aws_security_group.sonarQube-SG.id]
   key_name               = "webapp_keypair"
-}
+
   tags = {
     Name = "SonarQube VM"
   }
-
+}
 
 resource "aws_security_group" "sonarQube-SG" {
   name        = "sonarQube-SG"
@@ -42,7 +42,13 @@ resource "aws_security_group_rule" "outbound_allow_all_sonar" {
 # Wait for SonarQube to become available
 resource "null_resource" "wait_for_sonarqube" {
   provisioner "local-exec" {
-    command = "until $(curl --output /dev/null --silent --head --fail http://${aws_instance.sonarqube_vm.public_ip}:9000); do echo 'Waiting for SonarQube...'; sleep 10; done"
+    command = <<EOT
+    while ! curl --output /dev/null --silent --head --fail http://${aws_instance.sonarqube_vm.public_ip}:9000; do 
+      echo "Waiting for SonarQube...";
+      sleep 10;
+    done
+    echo "SonarQube is now reachable!"
+    EOT
   }
 
   depends_on = [aws_instance.sonarqube_vm]
