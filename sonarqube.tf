@@ -30,6 +30,15 @@ resource "aws_security_group_rule" "allow_port_9000_to_sonar_VM" {
   security_group_id = aws_security_group.sonarQube-SG.id
 }
 
+resource "aws_security_group_rule" "allow_ssh" {
+  type              = "ingress"
+  from_port         = 22
+  to_port           = 22
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.sonarQube-SG.id
+}
+
 resource "aws_security_group_rule" "outbound_allow_all_sonar" {
   type              = "egress"
   from_port         = 0
@@ -39,18 +48,17 @@ resource "aws_security_group_rule" "outbound_allow_all_sonar" {
   security_group_id = aws_security_group.sonarQube-SG.id
 }
 
-# Wait for SonarQube to become available
+# Wait for SonarQube to become available with timeout
 resource "null_resource" "wait_for_sonarqube" {
   provisioner "local-exec" {
     command = <<EOT
-    while ! curl --output /dev/null --silent --head --fail http://${aws_instance.sonarqube_vm.public_ip}:9000; do 
+    timeout 600 bash -c 'while ! curl --output /dev/null --silent --head --fail http://${aws_instance.sonarqube_vm.public_ip}:9000; do 
       echo "Waiting for SonarQube...";
       sleep 10;
-    done
+    done'
     echo "SonarQube is now reachable!"
     EOT
   }
 
   depends_on = [aws_instance.sonarqube_vm]
 }
-
