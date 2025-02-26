@@ -5,7 +5,7 @@ exec > /var/log/sonarqube-setup.log 2>&1  # Redirect all output to log file
 
 # Update system and install required packages
 sudo apt update && sudo apt upgrade -y
-sudo apt install -y unzip openjdk-17-jdk postgresql postgresql-contrib wget
+sudo apt install -y unzip openjdk-17-jdk postgresql postgresql-contrib wget curl
 
 # Configure PostgreSQL for SonarQube
 SONAR_DB="sonarqube"
@@ -18,11 +18,13 @@ sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $SONAR_DB TO $SONAR_U
 sudo -u postgres psql -c "ALTER ROLE $SONAR_USER WITH LOGIN;"
 sudo -u postgres psql -c "REVOKE CONNECT ON DATABASE $SONAR_DB FROM PUBLIC;"
 
-# Install SonarQube
-SONARQUBE_VERSION="10.5.1.90531"
-wget -q https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-$SONARQUBE_VERSION.zip
-sudo unzip sonarqube-$SONARQUBE_VERSION.zip -d /opt/
-sudo mv /opt/sonarqube-$SONARQUBE_VERSION /opt/sonarqube
+# Fetch the latest SonarQube version dynamically
+SONARQUBE_VERSION=$(curl -s https://binaries.sonarsource.com/Distribution/sonarqube/ | grep -oP 'sonarqube-\d+\.\d+\.\d+\.\d+' | sort -V | tail -1 | cut -d'-' -f2)
+
+# Download and Extract SonarQube
+wget -q "https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-${SONARQUBE_VERSION}.zip"
+sudo unzip "sonarqube-${SONARQUBE_VERSION}.zip" -d /opt/
+sudo mv "/opt/sonarqube-${SONARQUBE_VERSION}" /opt/sonarqube
 
 # Configure SonarQube database connection
 sudo tee /opt/sonarqube/conf/sonar.properties > /dev/null <<EOL
@@ -71,4 +73,3 @@ sleep 30
 sudo journalctl -u sonarqube --no-pager --lines=50 > /var/log/sonarqube.log
 
 echo "SonarQube setup completed successfully!"
-
