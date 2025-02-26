@@ -2,7 +2,7 @@ resource "aws_instance" "sonarqube_vm" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = "t2.medium" # Upgraded for better performance
   subnet_id              = aws_subnet.subnet-public-1.id
-  user_data              = templatefile("${path.module}/user-data-sonar.sh", {}) # Use templatefile
+  user_data              = templatefile("${path.module}/user-data-sonar.sh", { SONARQUBE_VERSION = "25.1.0.102122" })
   vpc_security_group_ids = [aws_security_group.sonarQube-SG.id]
   key_name               = "tfbest"
 
