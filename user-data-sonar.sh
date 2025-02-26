@@ -15,7 +15,7 @@ sudo apt install openjdk-17-jdk -y
 # Install PostgreSQL and create the SonarQube database and user
 sudo apt install postgresql postgresql-contrib -y
 sudo -u postgres psql -c "CREATE DATABASE sonarqube;"
-sudo -u postgres psql -c "CREATE USER sonar WITH ENCRYPTED PASSWORD 'M@sonardata23';"
+sudo -u postgres psql -c "CREATE USER sonar WITH ENCRYPTED PASSWORD 'your_strong_password';"
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE sonarqube TO sonar;"
 
 # Download and extract the latest SonarQube version
