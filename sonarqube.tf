@@ -1,8 +1,8 @@
 resource "aws_instance" "sonarqube_vm" {
   ami                    = data.aws_ami.ubuntu.id
-  instance_type          = "t2.micro"
+  instance_type          = "t2.medium" # Upgraded for better performance
   subnet_id              = aws_subnet.subnet-public-1.id
-  user_data              = filebase64("user-data-sonar.sh")
+  user_data              = templatefile("${path.module}/user-data-sonar.sh", {}) # Use templatefile
   vpc_security_group_ids = [aws_security_group.sonarQube-SG.id]
   key_name               = "tfbest"
 
@@ -26,7 +26,7 @@ resource "aws_security_group_rule" "allow_port_9000_to_sonar_VM" {
   from_port         = 9000
   to_port           = 9000
   protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
+  cidr_blocks       = ["0.0.0.0/0"]  # Open for all (You may want to restrict it)
   security_group_id = aws_security_group.sonarQube-SG.id
 }
 
@@ -35,7 +35,7 @@ resource "aws_security_group_rule" "allow_ssh" {
   from_port         = 22
   to_port           = 22
   protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
+  cidr_blocks       = ["103.179.211.117"]  # Restrict SSH to your IP only
   security_group_id = aws_security_group.sonarQube-SG.id
 }
 
@@ -52,7 +52,7 @@ resource "aws_security_group_rule" "outbound_allow_all_sonar" {
 resource "null_resource" "wait_for_sonarqube" {
   provisioner "local-exec" {
     command = <<EOT
-    timeout 600 bash -c 'while ! curl --output /dev/null --silent --head --fail http://${aws_instance.sonarqube_vm.public_ip}:9000; do 
+    timeout 600 bash -c 'until curl --output /dev/null --silent --head --fail http://${aws_instance.sonarqube_vm.public_ip}:9000; do 
       echo "Waiting for SonarQube...";
       sleep 10;
     done'
@@ -62,4 +62,5 @@ resource "null_resource" "wait_for_sonarqube" {
 
   depends_on = [aws_instance.sonarqube_vm]
 }
+
 
