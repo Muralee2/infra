@@ -1,5 +1,5 @@
 variable "my_ip" {
-  default = "103.179.211.117/32"  # Change to your actual IP
+  default = "103.179.211.117/32"  # Your actual IP in string format
 }
 
 variable "sonarqube_version" {
@@ -8,7 +8,7 @@ variable "sonarqube_version" {
 
 resource "aws_instance" "sonarqube_vm" {
   ami                    = data.aws_ami.ubuntu.id
-  instance_type          = "t2.medium" # Upgraded for better performance
+  instance_type          = "t2.medium"
   subnet_id              = aws_subnet.subnet-public-1.id
   user_data              = templatefile("${path.module}/user-data-sonar.sh", { 
     SONARQUBE_VERSION = var.sonarqube_version
@@ -45,7 +45,7 @@ resource "aws_security_group_rule" "allow_ssh" {
   from_port         = 22
   to_port           = 22
   protocol          = "tcp"
-  cidr_blocks       = [103.179.211.117/32]  # Restrict SSH to only your IP
+  cidr_blocks       = ["103.179.211.117"]  # Restrict SSH to only your IP
   security_group_id = aws_security_group.sonarQube-SG.id
 }
 
@@ -70,11 +70,7 @@ resource "null_resource" "wait_for_sonarqube" {
     EOT
   }
 
+  # Correct placement of depends_on
   depends_on = [aws_instance.sonarqube_vm]
 }
-
-
-  depends_on = [aws_instance.sonarqube_vm]
-}
-
 
