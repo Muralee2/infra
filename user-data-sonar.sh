@@ -12,14 +12,16 @@ SONAR_DB="sonarqube"
 SONAR_USER="sonar"
 SONAR_PASSWORD=$(openssl rand -base64 16)  # Generate a secure password
 
-sudo -u postgres psql -c "CREATE DATABASE $SONAR_DB;"
-sudo -u postgres psql -c "CREATE USER $SONAR_USER WITH ENCRYPTED PASSWORD '$SONAR_PASSWORD';"
-sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $SONAR_DB TO $SONAR_USER;"
-sudo -u postgres psql -c "ALTER ROLE $SONAR_USER WITH LOGIN;"
-sudo -u postgres psql -c "REVOKE CONNECT ON DATABASE $SONAR_DB FROM PUBLIC;"
+sudo -u postgres psql <<EOF
+CREATE DATABASE $SONAR_DB;
+CREATE USER $SONAR_USER WITH ENCRYPTED PASSWORD '$SONAR_PASSWORD';
+GRANT ALL PRIVILEGES ON DATABASE $SONAR_DB TO $SONAR_USER;
+ALTER ROLE $SONAR_USER WITH LOGIN;
+REVOKE CONNECT ON DATABASE $SONAR_DB FROM PUBLIC;
+EOF
 
-# Fetch the latest SonarQube version dynamically
-SONARQUBE_VERSION=$(curl -s https://binaries.sonarsource.com/Distribution/sonarqube/ | grep -oP 'sonarqube-\d+\.\d+\.\d+\.\d+' | sort -V | tail -1 | cut -d'-' -f2)
+# Fetch SonarQube version from Terraform variable
+SONARQUBE_VERSION="${SONARQUBE_VERSION}"
 
 # Download and Extract SonarQube
 wget -q "https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-${SONARQUBE_VERSION}.zip"
@@ -32,26 +34,35 @@ sonar.jdbc.username=$SONAR_USER
 sonar.jdbc.password=$SONAR_PASSWORD
 sonar.jdbc.url=jdbc:postgresql://localhost/$SONAR_DB
 sonar.web.host=0.0.0.0
+sonar.web.port=9000
 sonar.search.javaAdditionalOpts=-Dnode.store.allow_mmap=false
 EOL
 
 # Create a dedicated SonarQube user
-sudo useradd -M -d /opt/sonarqube -u 998 -r -s /bin/bash sonar
+sudo useradd -m -d /opt/sonarqube -u 998 -r -s /bin/bash sonar
 sudo chown -R sonar:sonar /opt/sonarqube
+sudo chmod -R 775 /opt/sonarqube
 
 # Optimize system settings for SonarQube
-echo "vm.max_map_count=262144" | sudo tee -a /etc/sysctl.conf
-echo "fs.file-max=65536" | sudo tee -a /etc/sysctl.conf
-sudo sysctl -p
+sudo tee -a /etc/sysctl.conf > /dev/null <<EOL
+vm.max_map_count=262144
+fs.file-max=65536
+EOL
+sudo sysctl --system
+
+sudo tee -a /etc/security/limits.conf > /dev/null <<EOL
+sonar   -   nofile   65536
+sonar   -   nproc    4096
+EOL
 
 # Create Systemd Service for SonarQube
 sudo tee /etc/systemd/system/sonarqube.service > /dev/null <<EOL
 [Unit]
 Description=SonarQube service
-After=syslog.target network.target postgresql.service
+After=network.target postgresql.service
 
 [Service]
-Type=forking
+Type=simple
 ExecStart=/opt/sonarqube/bin/linux-x86-64/sonar.sh start
 ExecStop=/opt/sonarqube/bin/linux-x86-64/sonar.sh stop
 User=sonar
@@ -67,6 +78,12 @@ EOL
 # Enable and start SonarQube service
 sudo systemctl daemon-reload
 sudo systemctl enable --now sonarqube
+
+# Allow SonarQube port in firewall (if UFW is enabled)
+if sudo ufw status | grep -q "active"; then
+    sudo ufw allow 9000/tcp
+    sudo ufw reload
+fi
 
 # Capture logs for debugging
 sleep 30
