@@ -1,18 +1,9 @@
-variable "my_ip" {
-  default = "103.179.211.117/32"  # Your actual IP in string format
-}
-
-variable "sonarqube_version" {
-  default = "10.5.1.90531"  # Fallback version if fetch fails
-}
 
 resource "aws_instance" "sonarqube_vm" {
   ami                    = data.aws_ami.ubuntu.id
-  instance_type          = "t2.medium"
+  instance_type          = "t2.medium" # Upgraded for better performance
   subnet_id              = aws_subnet.subnet-public-1.id
-  user_data              = templatefile("${path.module}/user-data-sonar.sh", { 
-    SONARQUBE_VERSION = var.sonarqube_version
-  })
+  user_data              = templatefile("${path.module}/user-data-sonar.sh", {}) # Use templatefile
   vpc_security_group_ids = [aws_security_group.sonarQube-SG.id]
   key_name               = "tfbest"
 
@@ -23,7 +14,7 @@ resource "aws_instance" "sonarqube_vm" {
 
 resource "aws_security_group" "sonarQube-SG" {
   name        = "sonarQube-SG"
-  description = "Allow SonarQube access"
+  description = "Allow port 9000 inbound traffic and all outbound traffic"
   vpc_id      = aws_vpc.webapp_VPC.id
 
   tags = {
@@ -36,7 +27,7 @@ resource "aws_security_group_rule" "allow_port_9000_to_sonar_VM" {
   from_port         = 9000
   to_port           = 9000
   protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]  # Open to all (modify as needed)
+  cidr_blocks       = ["0.0.0.0/0"]  # Open for all (You may want to restrict it)
   security_group_id = aws_security_group.sonarQube-SG.id
 }
 
@@ -45,7 +36,7 @@ resource "aws_security_group_rule" "allow_ssh" {
   from_port         = 22
   to_port           = 22
   protocol          = "tcp"
-  cidr_blocks       = ["103.179.211.117/32"]  # Restrict SSH to only your IP
+  cidr_blocks       = ["103.179.211.117/32"]  # Restrict SSH to your IP only
   security_group_id = aws_security_group.sonarQube-SG.id
 }
 
@@ -58,7 +49,7 @@ resource "aws_security_group_rule" "outbound_allow_all_sonar" {
   security_group_id = aws_security_group.sonarQube-SG.id
 }
 
-# Wait for SonarQube to become available
+# Wait for SonarQube to become available with timeout
 resource "null_resource" "wait_for_sonarqube" {
   provisioner "local-exec" {
     command = <<EOT
@@ -70,7 +61,6 @@ resource "null_resource" "wait_for_sonarqube" {
     EOT
   }
 
-  # Correct placement of depends_on
   depends_on = [aws_instance.sonarqube_vm]
 }
 
