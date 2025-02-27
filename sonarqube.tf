@@ -1,3 +1,34 @@
+resource "aws_instance" "postgresql_vm" {
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = "t2.medium"
+  subnet_id              = aws_subnet.subnet-public-1.id
+  vpc_security_group_ids = [aws_security_group.postgres_SG.id]
+  key_name               = "tfbest"
+
+  tags = {
+    Name = "PostgreSQL VM"
+  }
+}
+
+resource "aws_security_group" "postgres_SG" {
+  name        = "postgres-SG"
+  description = "Allow PostgreSQL inbound traffic"
+  vpc_id      = aws_vpc.webapp_VPC.id
+
+  tags = {
+    Name = "postgres-SG"
+  }
+}
+
+resource "aws_security_group_rule" "allow_postgres" {
+  type              = "ingress"
+  from_port         = 5432
+  to_port           = 5432
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]  # Restrict this as needed
+  security_group_id = aws_security_group.postgres_SG.id
+}
+
 resource "aws_instance" "sonarqube_vm" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = "t2.medium" # Upgraded for better performance
