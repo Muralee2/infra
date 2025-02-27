@@ -45,7 +45,7 @@ resource "aws_security_group_rule" "allow_ssh" {
   from_port         = 22
   to_port           = 22
   protocol          = "tcp"
-  cidr_blocks       = ["103.179.211.117"]  # Restrict SSH to only your IP
+  cidr_blocks       = ["103.179.211.117/32"]  # Restrict SSH to only your IP
   security_group_id = aws_security_group.sonarQube-SG.id
 }
 
