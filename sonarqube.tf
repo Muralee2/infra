@@ -3,7 +3,7 @@ resource "aws_instance" "postgresql_vm" {
   instance_type          = "t2.medium"
   subnet_id              = aws_subnet.subnet-public-1.id
   vpc_security_group_ids = [aws_security_group.postgres_SG.id]
-  key_name               = "tfbest"
+  key_name               = "man"
 
   tags = {
     Name = "PostgreSQL VM"
@@ -37,7 +37,7 @@ resource "aws_instance" "sonarqube_vm" {
     SONARQUBE_VERSION = "25.1.0.102122"  # Replace with the latest version if needed
   })
   vpc_security_group_ids = [aws_security_group.sonarQube-SG.id]
-  key_name               = "tfbest"
+  key_name               = "man"
 
   tags = {
     Name = "SonarQube VM"
