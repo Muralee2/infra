@@ -5,5 +5,5 @@ variable "static_website_bucket_name" {
 }
 variable "build-bucker-name" {
   type    = string
-  default = "Powergra"
+  default = "powergra"
 }
